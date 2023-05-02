@@ -148,13 +148,15 @@ app.post('/signupSubmit', async (req, res) => {
     var hashedPassword = await bcrypt.hash(password, saltRounds);
 
     await userCollection.insertOne({username: username, email: email, password: hashedPassword});
-    console.log("New User Approved");
-    res.send("New User Approved");
+    req.session.authenticated = true;
+    req.session.email = email;
+    req.session.cookie.maxAge = expireTime;
+    res.redirect("/members");
 });
 
-app.get('/signupSubmit', (req,res) => {
-  res.send("New User Approved");
-});
+// app.get('/signupSubmit', (req,res) => {
+//   res.send("New User Approved");
+// });
 
 app.get("/login", (req, res) => {
   res.send(`<form action='/loggingin' method='post'> <input type='email' name='email' placeholder='email'><br>
