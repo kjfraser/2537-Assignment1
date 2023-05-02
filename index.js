@@ -59,7 +59,7 @@ const userCollection = database.db(mongodb_database).collection("users");
 
 app.use(express.urlencoded({ extended: false }));
 
-
+app.use("/public",  express.static('./public/'));
 
 app.use(session({ 
   secret: node_session_secret,
@@ -70,30 +70,68 @@ app.use(session({
 ));
 
 app.get("/", async (req, res) => {
-  if(req.session.authenticated){
-    var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
-    res.send(`Hello, ${myAccount[0].username}!
-    <form action='/members'><button>Go to Members Area</button></form>
-    <form action='/logout'><button>Logout</button></form>
-    `);
-   // res.send(`You are logged in><form action='/logout'><button>Logout</button></form> `);
+  if(!req.session.authenticated){
+    res.send(`Hello! <br><form action='/login'><button>Login</button></form>
+    <br><form action='/signup'><button>Create Account</button></form>`);
     return;
   }
-  res.send(`Hello! <br><form action='/login'><button>Login</button></form>
-  <br><form action='/signup'><button>Create Account</button></form>`);
+
+  var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
+  res.send(`Hello, ${myAccount[0].username}!
+  <form action='/members'><button>Go to Members Area</button></form>
+  <form action='/logout'><button>Logout</button></form>
+  `);
+ // res.send(`You are logged in><form action='/logout'><button>Logout</button></form> `);
+  return;
+  console.log("User is logged in");
+});
+
+app.get('/members', async (req, res) => {
+  if(!req.session.authenticated){
+    res.redirect('/');
+    return;
+  }
+  var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
+  var page = `<h1>Hello, ${myAccount[0].username}.</h1><br>`;
+  var pics = new Array("/public/duck.png","/public/duck2.png","/public/goose.png");
+  var randomNum = Math.floor(Math.random() * pics.length);
+  page += `<img src="${pics[randomNum]}" alt="duck?" ></img><br>`;
+  page += `<form action='/logout'><button>Sign out</button></form>`;
+  
+  res.send(page);
+
 });
 
 app.get("/signup", (req, res) => {
-    res.send(`<form action="/submitUser" method='post'><input type='text' name='username' placeholder='name'><br>
-    <input type='email' name='email'placeholder='email'><br>
-    <input type='password' name='password' placeholder='password'><br><button>Submit</button></form>`);
+  res.send(`<form action="/signupSubmit" method='post'><input type='text' name='username' placeholder='name'><br>
+  <input type='email' name='email'placeholder='email'><br>
+  <input type='password' name='password' placeholder='password'><br><button>Submit</button></form>`);
 });
 
 
-app.post('/submitUser', async (req, res) => {
+
+app.post('/signupSubmit', async (req, res) => {
   var username = req.body.username;
   var email = req.body.email;
   var password = req.body.password;
+
+  var errorMsg = "";
+  if(username == ""){
+    errorMsg += "Name is required<br>";
+  }
+  if(email == ""){
+    errorMsg += "Email is required<br>";
+  }
+  if(password == ""){
+    errorMsg += "Password is required<br>";
+  }
+  if(errorMsg != ""){
+    res.send(errorMsg + `
+    <a href='/signup'>Try again</a>
+    `)
+    return;
+  }
+
  
   const schema = Joi.object({
         username: Joi.string().alphanum().max(20).required(),
@@ -114,8 +152,12 @@ app.post('/submitUser', async (req, res) => {
     res.send("New User Approved");
 });
 
+app.get('/signupSubmit', (req,res) => {
+  res.send("New User Approved");
+});
+
 app.get("/login", (req, res) => {
-  res.send(`<form action='/loggingin' method='post'> <input type='email' name='email'placeholder='email'><br>
+  res.send(`<form action='/loggingin' method='post'> <input type='email' name='email' placeholder='email'><br>
   <input type='password' name='password' placeholder='password'><br><button>Submit</button></form>`);
 });
 
@@ -156,6 +198,7 @@ app.post('/loggingin', async (req, res) => {
 app.get("/dashboard", async (req, res) => {
   if(!req.session.authenticated){
     res.redirect("/login");
+    return;
   }
   var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
   res.send(`You are logged in ${myAccount[0].username} <br><form action='/logout'><button>Logout</button></form> `);
@@ -169,7 +212,7 @@ app.get("/logout", (req, res) => {
 });
 
 app.get("/*", (req, res) => {
-  res.send("404 Not Found :(");
+  res.send("Page not found - 404 :(");
 });
 
 
