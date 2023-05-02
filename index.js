@@ -154,13 +154,20 @@ app.post('/signupSubmit', async (req, res) => {
     res.redirect("/members");
 });
 
-// app.get('/signupSubmit', (req,res) => {
-//   res.send("New User Approved");
-// });
+
 
 app.get("/login", (req, res) => {
+  var error = "";
+  if(req.params.error != null){
+      if(req.params.error == "user-not-found"){
+        error = "User not found";
+      }
+      else if(req.params.error == "wrong-password"){
+        error = "Incorrect password";
+      }
+  }
   res.send(`<form action='/loggingin' method='post'> <input type='email' name='email' placeholder='email'><br>
-  <input type='password' name='password' placeholder='password'><br><button>Submit</button></form>`);
+  <input type='password' name='password' placeholder='password'><br><button>Submit</button></form><p>${error}</p>`);
 });
 
 app.post('/loggingin', async (req, res) => {
@@ -180,7 +187,7 @@ app.post('/loggingin', async (req, res) => {
   console.log(result2);
   if(result2.length != 1){
     console.log("User not found");
-    res.redirect("/login");
+    res.redirect("/login?error='user-not-found'");
     return;
   }
   if(await bcrypt.compare(password, result2[0].password)){
@@ -192,7 +199,7 @@ app.post('/loggingin', async (req, res) => {
     return;
   }else{
     console.log("incorrect pass");
-    res.redirect("/login");
+    res.redirect("/login?error='incorrect-password'");
     return;
   }
 });
