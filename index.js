@@ -158,11 +158,11 @@ app.post('/signupSubmit', async (req, res) => {
 
 app.get("/login", (req, res) => {
   var error = "";
-  if(req.params.error != null){
-    if(req.params.error == "user-not-found"){
+  if(req.query.error != null){
+    if(req.query.error == "user-not-found"){
       error = "User not found";
     }
-    else if(req.params.error == "wrong-password"){
+    else if(req.query.error == "incorrect-password"){
       error = "Incorrect password";
     }
   }
