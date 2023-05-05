@@ -1,6 +1,7 @@
 
 
 const {MongoClient, ServerApiVersion} = require('mongodb');
+const mongodb = require('mongodb');
 const express = require("express");
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
@@ -122,9 +123,10 @@ app.post('/signupSubmit', async (req, res) => {
 
     var hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    await userCollection.insertOne({username: username, email: email, password: hashedPassword});
+    await userCollection.insertOne({username: username, email: email, password: hashedPassword, user_type: "user"});
     req.session.authenticated = true;
     req.session.email = email;
+    req.session.user_type = "user";
     req.session.cookie.maxAge = expireTime;
     res.redirect("/members");
 });
@@ -145,19 +147,20 @@ app.post('/loggingin', async (req, res) => {
     return;
   }
 
-  const result2 = await userCollection.find({email: email}).project({email: 1, password: 1, _id: 1}).toArray();
+  const userGrab = await userCollection.find({email: email}).project({email: 1, password: 1, _id: 1, user_type: 1}).toArray();
 
-  if(result2.length != 1 ){
+  if(userGrab.length != 1 ){
     console.log("User not found");
     res.redirect("/login?error=user-not-found");
     return;
   }
-  if(await bcrypt.compare(password, result2[0].password)){
+  if(await bcrypt.compare(password, userGrab[0].password)){
     console.log("correct pass");
     req.session.authenticated = true;
     req.session.email = email;
+    req.session.user_type = userGrab[0].user_type;
     req.session.cookie.maxAge = expireTime;
-    res.redirect("/dashboard");
+    res.redirect("/members");
     return;
   }else{
     console.log("incorrect pass");
@@ -165,6 +168,36 @@ app.post('/loggingin', async (req, res) => {
     return;
   }
 });
+
+app.get("/admin", async (req, res) => {
+  if(!req.session.authenticated){
+    res.redirect("/login");
+    return;
+  }
+  if(req.session.user_type != "admin"){
+    res.redirect("/members");
+    return;
+  }
+  var accounts = await userCollection.find({}).project({username: 1, user_type: 1, _id: 1}).toArray();
+  res.render('admin.ejs', {accounts: accounts});
+
+});
+
+app.post("/toggleAdmin", async (req, res) => {
+  if(!req.session.authenticated){
+    res.redirect("/login");
+    return;
+  }
+  if(req.session.user_type != "admin"){
+    res.redirect("/members");
+    return;
+  }
+  var id = req.body.id;
+  var newRole = req.body.newRole;
+  await userCollection.updateOne({_id: new mongodb.ObjectId(id)}, {$set: {user_type: newRole}});
+  res.redirect("/admin");
+});
+
 
 app.get("/dashboard", async (req, res) => {
   if(!req.session.authenticated){
@@ -184,7 +217,6 @@ app.get("/logout", (req, res) => {
 app.get("/*", (req, res) => {
   res.render("notfound.ejs");
 });
-
 
 app.listen(port, () => {
   console.log("Server running at port= " + port);

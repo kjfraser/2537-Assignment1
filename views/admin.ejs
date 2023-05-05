@@ -1,0 +1,19 @@
+<%- include("templates/header.ejs") %>
+<h1>Admin Page</h1>
+<table>
+  <%for (var i = 0; i < accounts.length; i++) {%>
+  <tr><%=accounts[i].username%> | <%=accounts[i].user_type%>
+    <!-- <button onclick="toggleAdmin(accounts[i]._id,(accounts[i].user_type == 'admin' ? 'remove' : 'add'))"> -->
+    <%let id = accounts[i]._id%>
+    <%let newRole = accounts[i].user_type == 'admin' ? 'user' : 'admin'%>
+    <form action='/toggleAdmin/'  method="post">
+      <input type="hidden" name="id" value="<%=id%>">
+      <input type="hidden" name="newRole" value="<%=newRole%>">
+      <button>
+        <%=accounts[i].user_type == 'admin' ? 'Remove Admin' : 'Make Admin'%>
+      </button>
+    </form>
+  </tr><br>
+  <%}%>
+</table>
+<%- include("templates/footer.ejs") %>
