@@ -9,12 +9,11 @@ const app = express();
 const saltRounds = 12;
 
 var port = process.env.PORT || 8000;
-
 const Joi = require("joi");
-
 const expireTime = 1000 * 60 * 60; // 1 hour
 
 require('dotenv').config();
+app.set('view engine', 'ejs');
 
 const mongodb_host = process.env.MONGODB_HOST;
 const mongodb_user = process.env.MONGODB_USER;
@@ -71,19 +70,13 @@ app.use(session({
 
 app.get("/", async (req, res) => {
   if(!req.session.authenticated){
-    res.send(`Hello! <br><form action='/login'><button>Login</button></form>
-    <br><form action='/signup'><button>Create Account</button></form>`);
+    res.render("landing_loggedout.ejs");
     return;
   }
-
   var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
-  res.send(`Hello, ${myAccount[0].username}!
-  <form action='/members'><button>Go to Members Area</button></form>
-  <form action='/logout'><button>Logout</button></form>
-  `);
- // res.send(`You are logged in><form action='/logout'><button>Logout</button></form> `);
-  return;
-  console.log("User is logged in");
+  res.render("landing_loggedin.ejs", {username: myAccount[0].username});
+
+
 });
 
 app.get('/members', async (req, res) => {
@@ -91,48 +84,30 @@ app.get('/members', async (req, res) => {
     res.redirect('/');
     return;
   }
-  var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
-  var page = `<h1>Hello, ${myAccount[0].username}.</h1><br>`;
   var pics = new Array("/public/duck.png","/public/duck2.png","/public/goose.png");
   var randomNum = Math.floor(Math.random() * pics.length);
-  page += `<img src="${pics[randomNum]}" alt="duck?" ></img><br>`;
-  page += `<form action='/logout'><button>Sign out</button></form>`;
-  
-  res.send(page);
-
+  var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
+  res.render('members.ejs', {username: myAccount[0].username, pic: pics[randomNum] });
 });
 
 app.get("/signup", (req, res) => {
-  res.send(`<form action="/signupSubmit" method='post'><input type='text' name='username' placeholder='name'><br>
-  <input type='email' name='email'placeholder='email'><br>
-  <input type='password' name='password' placeholder='password'><br><button>Submit</button></form>`);
+  res.render("signup.ejs");
 });
-
-
 
 app.post('/signupSubmit', async (req, res) => {
   var username = req.body.username;
   var email = req.body.email;
   var password = req.body.password;
 
-  var errorMsg = "";
-  if(username == ""){
-    errorMsg += "Name is required<br>";
-  }
-  if(email == ""){
-    errorMsg += "Email is required<br>";
-  }
-  if(password == ""){
-    errorMsg += "Password is required<br>";
-  }
-  if(errorMsg != ""){
-    res.send(errorMsg + `
-    <a href='/signup'>Try again</a>
-    `)
+ 
+  let usernameFilled = username != "";
+  let emailFilled = email != "";
+  let passwordFilled = password != "";
+  if(!usernameFilled || !emailFilled || !passwordFilled){
+    res.render("signup_error.ejs", {usernameFilled : usernameFilled, emailFilled : emailFilled, passwordFilled : passwordFilled});
     return;
   }
 
- 
   const schema = Joi.object({
         username: Joi.string().alphanum().max(20).required(),
         email: Joi.string().email().required(),
@@ -154,26 +129,14 @@ app.post('/signupSubmit', async (req, res) => {
     res.redirect("/members");
 });
 
-
-
 app.get("/login", (req, res) => {
-  var error = "";
-  if(req.query.error != null){
-    if(req.query.error == "user-not-found"){
-      error = "User not found";
-    }
-    else if(req.query.error == "incorrect-password"){
-      error = "Incorrect password";
-    }
-  }
-  res.send(`<form action='/loggingin' method='post'> <input type='email' name='email' placeholder='email'><br>
-  <input type='password' name='password' placeholder='password'><br><button>Submit</button></form><p>${error}</p>`);
+  var error = req.query.error != null;
+  res.render('login.ejs', {error: error});
 });
 
 app.post('/loggingin', async (req, res) => {
   var email = req.body.email;
   var password = req.body.password;
-
   const schema = Joi.string().email().required();
   const result = schema.validate(email);
   if (result.error != null) {
@@ -184,8 +147,7 @@ app.post('/loggingin', async (req, res) => {
 
   const result2 = await userCollection.find({email: email}).project({email: 1, password: 1, _id: 1}).toArray();
 
-  console.log(result2);
-  if(result2.length != 1){
+  if(result2.length != 1 ){
     console.log("User not found");
     res.redirect("/login?error=user-not-found");
     return;
@@ -210,8 +172,7 @@ app.get("/dashboard", async (req, res) => {
     return;
   }
   var myAccount = await userCollection.find({email: req.session.email}).project({}).toArray();
-  res.send(`You are logged in ${myAccount[0].username} <br><form action='/logout'><button>Logout</button></form> `);
-  
+  res.render('dashboard.ejs', {username: myAccount[0].username});
 });
 
 //TODO: add a route for logout
@@ -221,7 +182,7 @@ app.get("/logout", (req, res) => {
 });
 
 app.get("/*", (req, res) => {
-  res.send("Page not found - 404 :(");
+  res.render("notfound.ejs");
 });
 
 

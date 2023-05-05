@@ -1,0 +1,12 @@
+<%- include("templates/header.ejs") %>
+
+
+<form action='/loggingin' method='post'> <input type='email' name='email' placeholder='email'><br>
+  <input type='password' name='password' placeholder='password'><br><button>Submit</button></form>
+<p>
+  <%if(error){%>
+  Username/password combo is incorrect
+  <%}%>
+</p>
+
+<%- include("templates/footer.ejs") %>
