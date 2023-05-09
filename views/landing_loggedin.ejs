@@ -1,6 +1,13 @@
 <%- include("templates/header.ejs") %>
-Hello, <%=username%>
-<form action='/members'><button>Go to Members Area</button></form>
-<form action='/logout'><button>Logout</button></form>
+<div class="text-center">
+  <div class="w-100 p-3">
+  <h1>Hello, <span class="badge bg-primary"><%=username%></span></h1>
+
+  <div class="btn-group" role="group">
+    <form action='/members' ><button type="submit" class="btn btn-primary">Go to Members Area</button></form>
+    <form action='/logout' ><button type="submit" class="btn btn-danger">Logout</button></form>
+  </div>
+</div>
+</div>
 
 <%- include("templates/footer.ejs") %>

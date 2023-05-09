@@ -1,7 +1,18 @@
 <%- include("templates/header.ejs") %>
-Hello!
-<br>
-<form action='/login'><button>Login</button></form>
-<br>
-<form action='/signup'><button>Create Account</button></form>
+
+
+
+
+
+
+<div class="text-center">
+  <div class="w-100 p-3">
+    <h1 class="display-3">Hello!</h1>
+
+  <div class="btn-group" role="group">
+    <form action='/signup'><button class="btn btn-primary">Create Account</button></form>
+    <form action='/login'><button class="btn btn-secondary">Login</button></form>
+  </div>
+</div>
+</div>
 <%- include("templates/footer.ejs") %>

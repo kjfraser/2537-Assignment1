@@ -1,19 +1,31 @@
 <%- include("templates/header.ejs") %>
-<h1>Admin Page</h1>
-<table>
+<div class="page-header">
+  <h1>Admin Page</h1>
+</div>
+<ul class="list-group">
   <%for (var i = 0; i < accounts.length; i++) {%>
-  <tr><%=accounts[i].username%> | <%=accounts[i].user_type%>
-    <!-- <button onclick="toggleAdmin(accounts[i]._id,(accounts[i].user_type == 'admin' ? 'remove' : 'add'))"> -->
-    <%let id = accounts[i]._id%>
-    <%let newRole = accounts[i].user_type == 'admin' ? 'user' : 'admin'%>
-    <form action='/toggleAdmin/'  method="post">
+  <%let id = accounts[i]._id%>
+  <%let newRole = accounts[i].user_type == 'admin' ? 'user' : 'admin'%>
+  <li class="list-group-item d-flex justify-content-between align-items-center">
+    <form action='/toggleAdmin/' method="post">
       <input type="hidden" name="id" value="<%=id%>">
       <input type="hidden" name="newRole" value="<%=newRole%>">
-      <button>
+
+      <%if (accounts[i].user_type == 'admin') {%>
+      <button class="btn btn-danger" type="submit">
         <%=accounts[i].user_type == 'admin' ? 'Remove Admin' : 'Make Admin'%>
       </button>
+      <%} else {%>
+      <button class="btn btn-success" type="submit">
+        <%=accounts[i].user_type == 'admin' ? 'Remove Admin' : 'Make Admin'%>
+      </button>
+      <%}%>
+
+      <label class="">
+        <%=accounts[i].username%> <span class="badge bg-primary"> <%=accounts[i].user_type%>
+      </label>
     </form>
-  </tr><br>
+  </li>
   <%}%>
-</table>
+</ul>
 <%- include("templates/footer.ejs") %>

@@ -174,8 +174,9 @@ app.get("/admin", async (req, res) => {
     res.redirect("/login");
     return;
   }
-  if(req.session.user_type != "admin"){
-    res.redirect("/members");
+  let user = await userCollection.findOne({email: req.session.email});
+  if(user.user_type != "admin"){
+    res.render("/notadmin");
     return;
   }
   var accounts = await userCollection.find({}).project({username: 1, user_type: 1, _id: 1}).toArray();
@@ -188,7 +189,8 @@ app.post("/toggleAdmin", async (req, res) => {
     res.redirect("/login");
     return;
   }
-  if(req.session.user_type != "admin"){
+  let user = await userCollection.findOne({email: req.session.email});
+  if(user.user_type != "admin"){
     res.redirect("/members");
     return;
   }
