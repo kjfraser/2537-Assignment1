@@ -3,29 +3,8 @@
   <h1>Admin Page</h1>
 </div>
 <ul class="list-group">
-  <%for (var i = 0; i < accounts.length; i++) {%>
-  <%let id = accounts[i]._id%>
-  <%let newRole = accounts[i].user_type == 'admin' ? 'user' : 'admin'%>
-  <li class="list-group-item d-flex justify-content-between align-items-center">
-    <form action='/toggleAdmin/' method="post">
-      <input type="hidden" name="id" value="<%=id%>">
-      <input type="hidden" name="newRole" value="<%=newRole%>">
-
-      <%if (accounts[i].user_type == 'admin') {%>
-      <button class="btn btn-danger" type="submit">
-        <%=accounts[i].user_type == 'admin' ? 'Remove Admin' : 'Make Admin'%>
-      </button>
-      <%} else {%>
-      <button class="btn btn-success" type="submit">
-        <%=accounts[i].user_type == 'admin' ? 'Remove Admin' : 'Make Admin'%>
-      </button>
-      <%}%>
-
-      <label class="">
-        <%=accounts[i].username%> <span class="badge bg-primary"> <%=accounts[i].user_type%>
-      </label>
-    </form>
-  </li>
+  <%for (var i = 0; i < users.length; i++) {%>
+    <%- include("templates/user.ejs", {user: users[i]}) %>
+ 
   <%}%>
 </ul>
-<%- include("templates/footer.ejs") %>

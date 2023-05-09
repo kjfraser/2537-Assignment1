@@ -176,13 +176,14 @@ app.get("/admin", async (req, res) => {
   }
   let user = await userCollection.findOne({email: req.session.email});
   if(user.user_type != "admin"){
-    res.render("/notadmin");
+    res.render("notadmin.ejs");
     return;
   }
-  var accounts = await userCollection.find({}).project({username: 1, user_type: 1, _id: 1}).toArray();
-  res.render('admin.ejs', {accounts: accounts});
+  var users = await userCollection.find({}).project({username: 1, email: 1, user_type: 1, _id: 1}).toArray();
+ console.log(users);
+  res.render('admin.ejs', {users: users});
 
-});
+}); 
 
 app.post("/toggleAdmin", async (req, res) => {
   if(!req.session.authenticated){
