@@ -1,17 +1,10 @@
 var pageSize = 10;
 let currentPage = 1;
-let pokemon = [];
+var pokemon = [];
+var allPokemon = [];
 
-const updatePaginationDiv = (currentPage, numPages) => {
+var updatePaginationDiv = (currentPage, numPages) => {
   $("#pagination").empty();
-
-  let startPage = 1;
-  let endPage = numPages;
-  // for (let i = startPage; i <= endPage; i++) {
-  //   $("#pagination").append(`
-  //   <button class="btn btn-success psgr ml-1 numberedButtons" value="${i}">${i}</button>
-  //   `);
-  // }
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${1}">First</button>`);
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage - 1}">Previous</button>`);
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage}">${currentPage}</button>`);
@@ -19,7 +12,7 @@ const updatePaginationDiv = (currentPage, numPages) => {
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${numPages}">Last</button>`);
 };
 
-const paginate = async (currentPage, pageSize, pokemon) => {
+var paginate = async (currentPage, pageSize, pokemon) => {
   let selectedPokemon = pokemon.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   $("#pokecards").empty();
@@ -37,26 +30,127 @@ const paginate = async (currentPage, pageSize, pokemon) => {
   });
 };
 
-const init = async () => {
-  $("#pokecards").empty();
+var getTypes = async () => {
+  $("#types").empty();
+  let typeGet = await axios.get("https://pokeapi.co/api/v2/type");
+  let types = typeGet.data.results;
+  types.forEach((type) => {
+    $("#types").append(`<div class="form-check">
+    <input class="form-check-input" type="checkbox"  value="${type.name}" id="type${type.name}">
+    <label class="form-check-label" for="flexCheckDefault">
+    ${type.name}
+    </label>
+  </div>
+    `);
+
+  });
+};
+async function getPokemonOfType(type) {
+  let typeGet = await axios.get(`https://pokeapi.co/api/v2/type/${type}`);
+  let pokemonGet = typeGet.data.pokemon.map((pokemon) => pokemon.pokemon);
+  console.log(type);
+  console.log(pokemonGet);
+  return pokemonGet;
+}
+
+async function getAllPokemon(){
   let getResult = await axios.get(
     "https://pokeapi.co/api/v2/pokemon?offset=0&limit=810"
   );
-  const pokemon = getResult.data.results;
+  return getResult.data.results;
+}
+
+function findPokeOverlap(arraysLarge){
+  arraysLarge.push(allPokemon);
+
+  //Get the smallest array
+  let smallestArray = arraysLarge[0];
+  for (let i = 1; i < arraysLarge.length; i++) {
+    if(arraysLarge[i].length < smallestArray.length){
+      smallestArray = arraysLarge[i];
+    }
+  }
  
+
+  //Put the smallest array at the front of the array
+  arraysLarge = arraysLarge.filter(array => array != smallestArray)
+  arraysLarge.unshift(smallestArray);
+
+    //Get the names of the pokemon
+    let arrays = [];
+    for(let i = 0; i < arraysLarge.length; i++){
+     arrays.push(new Array())
+     for(let j = 0; j < arraysLarge[i].length; j++){
+        arrays[i].push(arraysLarge[i][j].name);
+      }
+    }
+
+
+  //Get the overlap
+  let overlap = [];
+  for (let item = 0; item < smallestArray.length; item++) {
+    let itemvalid = true;
+    for (let array = 1; array < arrays.length; array++) {
+      if(!arrays[array].includes(smallestArray[item].name)){
+        itemvalid = false;
+      }
+    }
+    if(itemvalid){
+      overlap.push(smallestArray[item]);
+    }
+  }
+
+  console.log("overlap");
+  console.log(overlap)
+  return overlap;
+}
+
+async function applyFilters(){
+  let filterArray = [];
+  let checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
+  for (let i = 0; i < checkboxes.length; i++) {
+   filterArray.push(getPokemonOfType(checkboxes[i].value));
+   console.log(checkboxes[i].value + checkboxes.length)
+  }
+  
+
+
+  Promise.all(filterArray).then((values) => {
+    console.log("values")
+    console.log(values);
+    if(values.length == 0){
+      init([]);
+      return;
+    }
+    if(values.length == 1){
+     init(values[0]);
+    }
+    let overlap = findPokeOverlap(values);
+    init(overlap);
+  });
+}
+
+var init = async (pokemon) => {
+  allPokemon = await getAllPokemon();
+  console.log("inited");
+  if(pokemon.length == 0){
+    pokemon = allPokemon
+  }
+  this.pokemon = pokemon;
+
+  $("#pokecards").empty();
   paginate(currentPage, pageSize, pokemon);
-  const numPages = Math.ceil(pokemon.length / pageSize);
+  var numPages = Math.ceil(pokemon.length / pageSize);
   updatePaginationDiv(currentPage, numPages);
 
 
   $('body').on('click', '.pokecard', async function(){
-  console.log("Hello");
   //Gets the attribute 'pokeName' of the html element.
-  const pokeName = $(this).attr('pokeName');
-  const pokeGet = await axios.get(`https://pokeapi.co/api/v2/pokemon/${pokeName}`);
+  var pokeName = $(this).attr('pokeName');
+  var pokeGet = await axios.get(`https://pokeapi.co/api/v2/pokemon/${pokeName}`);
 
   //Kind of like a for loop
-  const types = pokeGet.data.types.map((attribute) => attribute.type.name);
+  var types = pokeGet.data.types.map((attribute) => attribute.type.name);
 
   $('.modal-body').html(`
     <div style="width:200px">
@@ -106,5 +200,6 @@ const init = async () => {
 
 
 
+ $(document).ready(init([]), getTypes());
 
-$(document).ready(init);
+
