@@ -27,11 +27,13 @@ var init = async (pokemon) => {
   if (pokemon.length == 0) {
     pokemon = allPokemon
   }
+  currentPokemonSelection = pokemon;
 
   $("#pokecards").empty();
   await paginate(currentPage, pageSize, pokemon);
   numPages = Math.ceil(pokemon.length / pageSize);
   updatePaginationDiv(currentPage, numPages);
+  updatePageInfo(currentPage, pageSize, currentPokemonSelection);
 
   $('body').on('click', '.pokecard', async function () {
     //Gets the attribute 'pokeName' of the html element.
@@ -81,9 +83,12 @@ var init = async (pokemon) => {
     currentPage = desiredPage;
     await paginate(currentPage, pageSize, currentPokemonSelection);
     updatePaginationDiv(currentPage, numPages);
+    updatePageInfo(currentPage, pageSize, currentPokemonSelection);
   })
 
 };
+
+
 
 //Gets an array of pokemon that match the specific type
 async function getPokemonOfType(type) {
@@ -140,6 +145,7 @@ function findPokeOverlap(arraysLarge) {
 
 //Applies the filters for finding pokemon
 async function applyFilters() {
+ 
   let filterArray = [];
   let checkboxes = document.querySelectorAll('input[type=checkbox]:checked');
   for (let i = 0; i < checkboxes.length; i++) {
@@ -162,12 +168,14 @@ async function applyFilters() {
 
 //For Filter Updates
 async function update (pokemon){
+  currentPage = 1;
   currentPokemonSelection = pokemon;
 
   $("#pokecards").empty();
   await paginate(currentPage, pageSize, pokemon);
   numPages = Math.ceil(pokemon.length / pageSize);
   updatePaginationDiv(currentPage, numPages);
+  updatePageInfo(currentPage, pageSize, currentPokemonSelection);
 
 
   $('body').on('click', '.pokecard', async function () {
@@ -244,8 +252,15 @@ var updatePaginationDiv = (currentPage, numPages) => {
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage}">${currentPage}</button>`);
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage + 1}">Next</button>`);
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${numPages}">Last</button>`);
+
+
 };
 
+function updatePageInfo(currentPage, pageSize, pokemon){
+  $("#info").empty();
+  $("#info").append(`Showing ` + ((currentPage - 1) * pageSize + 1) + ` to ` + (Math.min(((currentPage - 1) * pageSize) + pageSize, pokemon.length)) + ` of ` + pokemon.length + ` Pokemon`);
+
+}
 
 //Initialize the page
 $(document).ready(init([]));
