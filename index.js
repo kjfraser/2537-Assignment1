@@ -1,11 +1,12 @@
 var pageSize = 10;
 let currentPage = 1;
-var pokemon = [];
+var currentPokemonSelection = [];
 var allPokemon = [];
+var numPages;
 
 //For Initial Load
 var init = async (pokemon) => {
-
+  console.log("init");
   //Load Filters Dropdown
   $("#types").empty();
   let typeGet = await axios.get("https://pokeapi.co/api/v2/type");
@@ -29,7 +30,7 @@ var init = async (pokemon) => {
 
   $("#pokecards").empty();
   await paginate(currentPage, pageSize, pokemon);
-  var numPages = Math.ceil(pokemon.length / pageSize);
+  numPages = Math.ceil(pokemon.length / pageSize);
   updatePaginationDiv(currentPage, numPages);
 
   $('body').on('click', '.pokecard', async function () {
@@ -78,7 +79,7 @@ var init = async (pokemon) => {
       return;
     }
     currentPage = desiredPage;
-    await paginate(currentPage, pageSize, pokemon);
+    await paginate(currentPage, pageSize, currentPokemonSelection);
     updatePaginationDiv(currentPage, numPages);
   })
 
@@ -161,10 +162,11 @@ async function applyFilters() {
 
 //For Filter Updates
 async function update (pokemon){
+  currentPokemonSelection = pokemon;
 
   $("#pokecards").empty();
   await paginate(currentPage, pageSize, pokemon);
-  var numPages = Math.ceil(pokemon.length / pageSize);
+  numPages = Math.ceil(pokemon.length / pageSize);
   updatePaginationDiv(currentPage, numPages);
 
 
@@ -211,7 +213,8 @@ async function update (pokemon){
 }
 
 //Limits the number of pokemon cards on the page
-var paginate = async (currentPage, pageSize, pokemon) => {
+async function paginate(currentPage, pageSize, pokemon){
+  console.log(pokemon)
   let selectedPokemon = pokemon.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   $("#pokecards").empty();
