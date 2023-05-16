@@ -6,7 +6,6 @@ var numPages;
 
 //For Initial Load
 var init = async (pokemon) => {
-  console.log("init");
   //Load Filters Dropdown
   $("#types").empty();
   let typeGet = await axios.get("https://pokeapi.co/api/v2/type");
@@ -222,7 +221,6 @@ async function update (pokemon){
 
 //Limits the number of pokemon cards on the page
 async function paginate(currentPage, pageSize, pokemon){
-  console.log(pokemon)
   let selectedPokemon = pokemon.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   $("#pokecards").empty();
@@ -247,12 +245,15 @@ async function paginate(currentPage, pageSize, pokemon){
 //Updates the page selection bar.
 var updatePaginationDiv = (currentPage, numPages) => {
   $("#pagination").empty();
+  if(currentPage != 1){
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${1}">First</button>`);
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage - 1}">Previous</button>`);
+  }
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage}">${currentPage}</button>`);
+  if(currentPage != numPages){
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${currentPage + 1}">Next</button>`);
   $("#pagination").append(`<button class="btn btn-success psgr ml-1 numberedButtons" value="${numPages}">Last</button>`);
-
+  }
 
 };
 
