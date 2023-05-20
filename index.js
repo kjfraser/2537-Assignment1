@@ -1,13 +1,24 @@
 //Define the game variables
-const cardCount = 6;
+var totalCards = 6;
+var totalClicks = 0;
+var matches = 0;
+
 
 const setup = async () => {
+
+  //Reset variables
+  $("#total_pairs").text("Total Pairs: " + totalCards/2);
+  totalClicks = 0;
+  $("#total_clicks").text("Total Clicks: " + totalClicks);
+  matches = 0;
+  $("#matches").text("Matches: " + matches);
+  $("#pairs_left").text("Pairs Left: " + (totalCards/2 - matches));
 
   //Load Random Images from Pokemon API
   let getResult = await axios.get("https://pokeapi.co/api/v2/pokemon?offset=0&limit=810");
   let pokemon = getResult.data.results;
   let pokemonImages = [];
-  for (let i = 0; i < cardCount / 2; i++) {
+  for (let i = 0; i < totalCards / 2; i++) {
     let pokemonImage = ""
     while(pokemonImage == "" || pokemonImages.includes(pokemonImage)){
       pokemonImage = await getRandomPokemon(pokemon);
@@ -19,7 +30,7 @@ const setup = async () => {
   $("#game_grid").empty();
 
   //Create Cards
-  for (let i = 0; i < cardCount / 2; i++) {
+  for (let i = 0; i < totalCards / 2; i++) {
     let card = $("<div id= >").addClass("card");
     let frontFace = $("<img>").addClass("front_face").attr("src", pokemonImages[i]);
     let id = "img" + i;
@@ -30,9 +41,9 @@ const setup = async () => {
     $("#game_grid").append(card);
   }
   //Create duplicate set
-  for (let i = cardCount / 2; i < cardCount; i++) {
+  for (let i = totalCards / 2; i < totalCards; i++) {
     let card = $("<div id= >").addClass("card");
-    let frontFace = $("<img>").addClass("front_face").attr("src", pokemonImages[i - cardCount / 2]);
+    let frontFace = $("<img>").addClass("front_face").attr("src", pokemonImages[i - totalCards / 2]);
     let id = "img" + i;
     frontFace.attr("id", id);
     let backFace = $("<img>").addClass("back_face").attr("src", "back.webp");
@@ -56,6 +67,9 @@ const setup = async () => {
     if ($(this).hasClass("flip") || (firstCard && secondCard)) {
       return;
     }
+    totalClicks++; //Increment total clicks
+    $("#total_clicks").text("Total Clicks: " + totalClicks); //Update total clicks
+
     $(this).toggleClass("flip");
     if (!firstCard) {
       firstCard = $(this).find(".front_face")[0];
@@ -67,6 +81,9 @@ const setup = async () => {
         $(`#${secondCard.id}`).parent().off("click");
         firstCard = undefined;
         secondCard = undefined;
+        matches++;
+        $("#matches").text("Matches: " + matches);
+        $("#pairs_left").text("Pairs Left: " + (totalCards/2 - matches));
         checkWin();
       } else {
         console.log("no match");
@@ -90,7 +107,7 @@ async function getRandomPokemon(pokemon) {
 
 //Check for win
 function checkWin() {
-  if ($(".flip").length == cardCount) {
+  if ($(".flip").length == totalCards) {
     setTimeout(() => {
       alert("You Win!");
       animateEnd();
@@ -100,7 +117,7 @@ function checkWin() {
 }
 //Animate cards turning over at end of game
 function animateEnd() {
-  $(".card").toggleClass("flip");
+  $(".card").removeClass("flip");
   setTimeout(() => {
     setup();
   }, 1000);
@@ -113,5 +130,14 @@ function flipBack(card) {
   }, 1000);
 }
 
+const setButtons = () => {
+  console.log("setting buttons");
+  $("#reset").on("click", () => {
+    animateEnd();
+  });
+}
 
-$(document).ready(setup);
+$(document).ready(()=>{
+  setup();
+  setButtons();
+});
