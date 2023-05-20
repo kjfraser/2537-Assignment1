@@ -2,7 +2,8 @@
 var totalCards = 6;
 var totalClicks = 0;
 var matches = 0;
-
+var startTime;
+var time = 30;
 
 const setup = async () => {
 
@@ -59,6 +60,22 @@ const setup = async () => {
     const target2 = Math.floor(Math.random() * cards.length - 1) + 1;
     cards.eq(target).before(cards.eq(target2));
   }
+
+  //Reset Timer
+  $("#timer").text("Time: 0:00");
+  clearInterval(timer);
+  time = totalCards/4 * 10 * 10000; 
+  startTime = Date.now();
+  setInterval( function() {
+    var delta = Date.now() - startTime; // milliseconds elapsed since start
+    let newTime = time - delta;
+    let seconds = Math.floor(newTime/1000) % 60;
+    $("#timer").text("Time: " + seconds);
+  });
+
+
+
+  
 
   //Game Logic
   let firstCard = undefined;
