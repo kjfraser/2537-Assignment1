@@ -8,6 +8,7 @@ var startTime;
 var maxTime = 0;
 var pauseCountdown = true;
 var lastTime = 0;
+var randomPowerupTime = 0;
 //Screen size variables
 var width = 600
 var height = 400
@@ -94,6 +95,8 @@ const setup = async () => {
   if (maxTime == 0) {
     maxTime = totalCards * 3 * 1000;
   }
+  //Random time for powerup, between 1/4 and 3/4 of max time
+  randomPowerupTime = Math.floor(Math.random() * maxTime/2 + maxTime/4)/1000;
   startTime = Date.now();
   //Time events
   setInterval( function() {
@@ -107,6 +110,13 @@ const setup = async () => {
     if(seconds < 0 && isPlaying){
       pauseCountdown = true;
       lose();
+    }
+    //Powerup events
+    $("#powerup").css("color", `hsl(${newTime/2}, 100%, 58%)`);
+    //hsl(0, 38%, 58%)
+    if(seconds < randomPowerupTime){
+      randomPowerupTime = -999
+      powerup();
     }
   });
 
@@ -125,12 +135,16 @@ const setup = async () => {
     $(this).toggleClass("flip");
     if (!firstCard) {
       firstCard = $(this).find(".front_face")[0];
+      $(this).addClass("outOfPlay");
     } else {
       secondCard = $(this).find(".front_face")[0];
+      $(this).addClass("outOfPlay");
       if (firstCard.src == secondCard.src) {
         console.log("match");
         $(`#${firstCard.id}`).parent().off("click");
         $(`#${secondCard.id}`).parent().off("click");
+        
+       
         firstCard = undefined;
         secondCard = undefined;
         matches++;
@@ -185,6 +199,7 @@ function animateEnd() {
 function flipBack(card) {
   setTimeout(() => {
     $(`#${card.id}`).parent().toggleClass("flip");
+    $(`#${card.id}`).parent().removeClass("outOfPlay");
   }, 1000);
 }
 
@@ -210,7 +225,6 @@ function sqrtish(num){
       meanest = i;
     }
   }
-  console.log(meanest);
   return meanest;
 }
 
@@ -228,19 +242,42 @@ function lose(){
   animateEnd();
 }
 
+function powerup(){
+  $("#powerup").show();
+  $(".card").each(function(){
+    if(!$(this).hasClass("outOfPlay") ){
+      $(this).toggleClass("flip");
+    }
+  });
+  
+  setTimeout(() => {
+    $(".card").each(function(){
+      if(!$(this).hasClass("outOfPlay")){
+        $(this).toggleClass("flip");
+      }
+    });
+    $("#powerup").hide();
+  }, 1500);
+}
+
+
+
 
 //Start the game when the page loads
 $(document).ready(() => {
   $("#easy").on("click", () => {
     totalCards = 16;
+    maxTime = 0;
     start();
   });
   $("#medium").on("click", () => {
     totalCards = 36;
+    maxTime = 0;
     start();
   });
   $("#hard").on("click", () => {
     totalCards = 100;
+    maxTime = 0;
     start();
   });
   $("#custom_game").on("click", () => {
@@ -267,6 +304,11 @@ $(document).ready(() => {
     start();
   }
   );
+
+  //Settings
+  $("#darkmodetoggle").on("click", () => {
+    $('body').toggleClass("darkmode");
+  });
 
 
 });
