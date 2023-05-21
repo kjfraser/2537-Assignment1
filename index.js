@@ -1,11 +1,22 @@
 //Define the game variables
-var totalCards = 6;
+var isPlaying = false;
+var totalCards = 12;
 var totalClicks = 0;
 var matches = 0;
-var startTime;
-var time = 30;
+//Time variables
+var startTime;            
+var maxTime = 0;
+var pauseCountdown = true;
+var lastTime = 0;
+//Screen size variables
+var width = 600
+var height = 400
 
+
+
+//setup a new game
 const setup = async () => {
+  isPlaying = false;
 
   //Reset variables
   $("#total_pairs").text("Total Pairs: " + totalCards/2);
@@ -14,6 +25,7 @@ const setup = async () => {
   matches = 0;
   $("#matches").text("Matches: " + matches);
   $("#pairs_left").text("Pairs Left: " + (totalCards/2 - matches));
+  pauseCountdown = false;
 
   //Load Random Images from Pokemon API
   let getResult = await axios.get("https://pokeapi.co/api/v2/pokemon?offset=0&limit=810");
@@ -26,9 +38,19 @@ const setup = async () => {
     }
     pokemonImages.push(pokemonImage);
   }
+  
 
   //Clear the game grid
   $("#game_grid").empty();
+
+  //Prevent grid overflow
+  let meanish = sqrtish(totalCards);
+  if(totalCards/meanish > meanish){
+    meanish = totalCards/meanish;
+  }
+
+  var width = 100 / meanish
+  var height = 100 / meanish
 
   //Create Cards
   for (let i = 0; i < totalCards / 2; i++) {
@@ -39,6 +61,8 @@ const setup = async () => {
     let backFace = $("<img>").addClass("back_face").attr("src", "back.webp");
     card.append(frontFace);
     card.append(backFace);
+    card.css("width", `${width}%`);
+    card.css("height", `${height}%`);
     $("#game_grid").append(card);
   }
   //Create duplicate set
@@ -50,38 +74,49 @@ const setup = async () => {
     let backFace = $("<img>").addClass("back_face").attr("src", "back.webp");
     card.append(frontFace);
     card.append(backFace);
+    card.css("width", `${width}%`);
+    card.css("height", `${height}%`);
     $("#game_grid").append(card);
   }
+
 
   //Randomize Cards
   const cards = $(".card");
   for (let i = 0; i < cards.length; i++) {
-    const target = Math.floor(Math.random() * cards.length - 1) + 1;
-    const target2 = Math.floor(Math.random() * cards.length - 1) + 1;
-    cards.eq(target).before(cards.eq(target2));
-  }
+    const rand1 = Math.floor(Math.random() * cards.length - 1) + 1;
+    const rand2 = Math.floor(Math.random() * cards.length - 1) + 1;
+    cards.eq(rand1).before(cards.eq(rand2)); //Shuffles two random cards
+  } 
 
-  //Reset Timer
-  $("#timer").text("Time: 0:00");
+  //Set Timer
+  $("#timer").text("Time Remaining: 0:00");
   clearInterval(timer);
-  time = totalCards/4 * 10 * 10000; 
+  if (maxTime == 0) {
+    maxTime = totalCards * 3 * 1000;
+  }
   startTime = Date.now();
+  //Time events
   setInterval( function() {
-    var delta = Date.now() - startTime; // milliseconds elapsed since start
-    let newTime = time - delta;
-    let seconds = Math.floor(newTime/1000) % 60;
-    $("#timer").text("Time: " + seconds);
+    var deltaTime = Date.now() - lastTime;
+    var elapsedTime = Date.now() - startTime; // milliseconds elapsed since start
+    if(pauseCountdown){startTime += deltaTime;} //If game is over, don't count down
+    let newTime = maxTime - elapsedTime;
+    let seconds = Math.floor(newTime/1000);
+    lastTime = Date.now();
+    $("#timer").text("Time Remaining: " + seconds);
+    if(seconds < 0 && isPlaying){
+      pauseCountdown = true;
+      lose();
+    }
   });
 
 
-
-  
-
   //Game Logic
+  isPlaying = true;
   let firstCard = undefined;
   let secondCard = undefined;
   $(".card").on(("click"), function () {
-    if ($(this).hasClass("flip") || (firstCard && secondCard)) {
+    if (!isPlaying || $(this).hasClass("flip") || (firstCard && secondCard)) {
       return;
     }
     totalClicks++; //Increment total clicks
@@ -114,6 +149,8 @@ const setup = async () => {
 
 }
 
+
+//Get random pokemon image from API
 async function getRandomPokemon(pokemon) {
   let randomPokemon = Math.floor(Math.random() * pokemon.length);
   let pokemonName = pokemon[randomPokemon].name;
@@ -122,16 +159,20 @@ async function getRandomPokemon(pokemon) {
   return pokemonImage;
 }
 
+
 //Check for win
 function checkWin() {
   if ($(".flip").length == totalCards) {
     setTimeout(() => {
+      pauseCountdown = false;
       alert("You Win!");
       animateEnd();
     }, 1000);
 
   }
 }
+
+
 //Animate cards turning over at end of game
 function animateEnd() {
   $(".card").removeClass("flip");
@@ -147,14 +188,85 @@ function flipBack(card) {
   }, 1000);
 }
 
+//Sets up the user interface buttons
 const setButtons = () => {
-  console.log("setting buttons");
   $("#reset").on("click", () => {
     animateEnd();
   });
+  $("#back").on("click", () => {
+    $("#game").hide();
+    setup();
+    $("#menu").show();
+    
+  }
+  );
 }
 
-$(document).ready(()=>{
+//Gets the closest thing to a square root
+function sqrtish(num){
+  let meanest = 1;
+  for (let i = 1; i <= Math.ceil(Math.sqrt(num)); i++) {
+    if(num % i == 0){
+      meanest = i;
+    }
+  }
+  console.log(meanest);
+  return meanest;
+}
+
+
+function start(){
+  $("#menu").hide();
+  $("#game").show();
   setup();
   setButtons();
+}
+
+function lose(){
+  isPlaying = false;
+  alert("Out of Time!");
+  animateEnd();
+}
+
+
+//Start the game when the page loads
+$(document).ready(() => {
+  $("#easy").on("click", () => {
+    totalCards = 16;
+    start();
+  });
+  $("#medium").on("click", () => {
+    totalCards = 36;
+    start();
+  });
+  $("#hard").on("click", () => {
+    totalCards = 100;
+    start();
+  });
+  $("#custom_game").on("click", () => {
+
+    //Ensure that custom pairs is within bounds
+    if($("#setpairs").val() > $("#setpairs").attr("max")){
+      $("#setpairs").val($("#setpairs").attr("max"));
+    }
+    if($("#setpairs").val() < $("#setpairs").attr("min")){
+      $("#setpairs").val($("#setpairs").attr("min"));
+    }
+
+    //Ensure that custom time is within bounds
+    if($("#settime").val() > $("#settime").attr("max")){
+      $("#settime").val($("#settime").attr("max"));
+    }
+    if($("#settime").val() < $("#settime").attr("min")){
+      $("#settime").val($("#settime").attr("min"));
+    }
+
+    //Set total cards and max time
+    totalCards = $("#setpairs").val() * 2;
+    maxTime = $("#settime").val() * 1000;
+    start();
+  }
+  );
+
+
 });

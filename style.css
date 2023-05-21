@@ -4,15 +4,15 @@ body {
 
 #game_grid {
   border: 2px tomato solid;
-  width: 600px;
-  height: 400px;
+  width: 70vmin;
+  height: 70vmin; 
   margin: auto;
   display: flex;
   flex-wrap: wrap;
 }
 
 .card {
-  width: 33.3%;
+  /* width: 33.3%; */
   position: relative;
   transition: transform 1s;
   perspective: 1000px;
@@ -25,7 +25,7 @@ img {
 
 .front_face,
 .back_face {
-  position: absolute;
+  position: absolute; 
   backface-visibility: hidden;
 }
 
