@@ -8,7 +8,7 @@ var startTime;
 var maxTime = 0;
 var pauseCountdown = true;
 var lastTime = 0;
-var randomPowerupTime = 0;
+var powerupCooldown = 0;
 //Screen size variables
 var width = 600
 var height = 400
@@ -96,11 +96,11 @@ const setup = async () => {
     maxTime = totalCards * 3 * 1000;
   }
   //Random time for powerup, between 1/4 and 3/4 of max time
-  randomPowerupTime = Math.floor(Math.random() * maxTime/2 + maxTime/4)/1000;
   startTime = Date.now();
   //Time events
   setInterval( function() {
     var deltaTime = Date.now() - lastTime;
+    
     var elapsedTime = Date.now() - startTime; // milliseconds elapsed since start
     if(pauseCountdown){startTime += deltaTime;} //If game is over, don't count down
     let newTime = maxTime - elapsedTime;
@@ -112,11 +112,14 @@ const setup = async () => {
       lose();
     }
     //Powerup events
+    powerupCooldown -= deltaTime;
     $("#powerup").css("color", `hsl(${newTime/2}, 100%, 58%)`);
-    //hsl(0, 38%, 58%)
-    if(seconds < randomPowerupTime){
-      randomPowerupTime = -999
-      powerup();
+    if(seconds > maxTime/1000/4 && seconds < maxTime/1000*3/4 && powerupCooldown <= 0){
+      let rand = Math.floor(Math.random() * 30/(deltaTime/1000)); //1 in 30 chance per second
+      if(rand == 1){
+        powerupCooldown = 5000;
+        powerup();
+      }
     }
   });
 
@@ -140,11 +143,8 @@ const setup = async () => {
       secondCard = $(this).find(".front_face")[0];
       $(this).addClass("outOfPlay");
       if (firstCard.src == secondCard.src) {
-        console.log("match");
         $(`#${firstCard.id}`).parent().off("click");
         $(`#${secondCard.id}`).parent().off("click");
-        
-       
         firstCard = undefined;
         secondCard = undefined;
         matches++;
@@ -152,17 +152,20 @@ const setup = async () => {
         $("#pairs_left").text("Pairs Left: " + (totalCards/2 - matches));
         checkWin();
       } else {
-        console.log("no match");
-        flipBack(firstCard);
-        flipBack(secondCard);
-        firstCard = undefined;
-        secondCard = undefined;
+        //Flip cards back over if no match
+        setTimeout(() => {
+          $(`#${firstCard.id}`).parent().toggleClass("flip");
+          $(`#${firstCard.id}`).parent().removeClass("outOfPlay");
+          $(`#${secondCard.id}`).parent().toggleClass("flip");
+          $(`#${secondCard.id}`).parent().removeClass("outOfPlay");
+          firstCard = undefined;
+          secondCard = undefined;
+        }, 1000);
       }
     }
   });
 
 }
-
 
 //Get random pokemon image from API
 async function getRandomPokemon(pokemon) {
@@ -195,13 +198,7 @@ function animateEnd() {
   }, 1000);
 }
 
-//Flip cards back over if no match
-function flipBack(card) {
-  setTimeout(() => {
-    $(`#${card.id}`).parent().toggleClass("flip");
-    $(`#${card.id}`).parent().removeClass("outOfPlay");
-  }, 1000);
-}
+
 
 //Sets up the user interface buttons
 const setButtons = () => {
